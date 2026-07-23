@@ -5,6 +5,33 @@ import { citizenNames, officerNames, streetNames } from './names';
 import type { Complaint, Citizen, Officer, Status, Priority, TimelineEvent, Comment } from '../types';
 import { generateSummary, spamScore } from '../utils/ai';
 
+// Category-relevant demo images: LoremFlickr returns photos matching these
+// keyword tags, so a "Road Damage" report shows a road photo, a "Garbage
+// Overflow" report shows a garbage photo, etc. `lock` keeps the same photo
+// for the same seed across reloads.
+const CATEGORY_IMAGE_KEYWORDS: Record<string, string> = {
+  road: 'road,pothole',
+  drainage: 'drain,sewer',
+  garbage: 'garbage,trash',
+  construction: 'construction,building',
+  streetlight: 'streetlight,lamp',
+  waterlogging: 'flood,street',
+  water_supply: 'water,tap',
+  electricity: 'powerlines,electricity',
+  traffic: 'traffic,intersection',
+  noise: 'concert,speaker',
+  air_pollution: 'smoke,factory',
+  health: 'hospital,clinic',
+  education: 'school,classroom',
+  corruption: 'office,documents',
+  other: 'city,street',
+};
+
+function categoryImage(categoryId: string, seed: string): string {
+  const keywords = CATEGORY_IMAGE_KEYWORDS[categoryId] ?? CATEGORY_IMAGE_KEYWORDS.other;
+  return `https://loremflickr.com/640/420/${keywords}?lock=${seed}`;
+}
+
 // Deterministic PRNG (mulberry32)
 function mulberry32(seed: number) {
   return function () {
@@ -151,7 +178,7 @@ export function generateComplaints(count: number): Complaint[] {
     const isAnonymous = rand() > 0.75;
     const citizen = pick(citizenNames);
     const imgCount = randInt(1, 3);
-    const images = Array.from({ length: imgCount }, (_, idx) => `https://picsum.photos/seed/cvb${i}-${idx}/640/420`);
+    const images = Array.from({ length: imgCount }, (_, idx) => categoryImage(category.id, `${i}-${idx}`));
     const estResolution = new Date(createdAt); estResolution.setDate(estResolution.getDate() + category.estResolutionDays);
 
     const complaint: Complaint = {
@@ -175,8 +202,8 @@ export function generateComplaints(count: number): Complaint[] {
       createdAt: createdAt.toISOString(),
       updatedAt: daysAgo(randInt(0, 5)).toISOString(),
       images,
-      beforeImage: status === 'solved' || status === 'in_progress' ? `https://picsum.photos/seed/before${i}/640/420` : undefined,
-      afterImage: status === 'solved' ? `https://picsum.photos/seed/after${i}/640/420` : undefined,
+      beforeImage: status === 'solved' || status === 'in_progress' ? categoryImage(category.id, `before${i}`) : undefined,
+      afterImage: status === 'solved' ? categoryImage(category.id, `after${i}`) : undefined,
       upvotes: randInt(0, 340),
       aiSummary: generateSummary(titleEn, descEn),
       aiSpamScore: spamScore(titleEn, descEn, imgCount),
