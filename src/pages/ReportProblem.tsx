@@ -82,7 +82,7 @@ export function ReportProblem() {
       departmentId: analysis.departmentId,
       createdAt: now,
       updatedAt: now,
-      images: images.length ? images : ['https://picsum.photos/seed/newreport/640/420'],
+      images: images.length ? images : [`https://loremflickr.com/640/420/${analysis.categoryId},bangladesh?lock=${Date.now()}`],
       upvotes: 0,
       aiSummary: analysis.summary,
       aiSpamScore: analysis.spamScore,
